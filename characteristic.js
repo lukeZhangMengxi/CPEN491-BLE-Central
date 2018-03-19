@@ -1,8 +1,14 @@
 var util = require('util');
-
 var bleno = require('../..');
+var gpio = require('gpio');
+
 
 var BlenoCharacteristic = bleno.Characteristic;
+
+// GPIO variables
+var led8; // Board Pin 8 (GPIO 14)
+
+
 
 
 var stateEnums = {
@@ -109,12 +115,22 @@ EchoCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResp
       // functions to control the light
       if (buf == '0')
       {
-        console.log('\n---------------\nClosing the light ^_^\n---------------\n');
+        console.log('\n---------------\nTurning off the light ^_^\n---------------\n');
+	led8 = gpio.export(14, {
+          ready: function(){
+	    led8.reset();
+	  }
+	});
         curState = stateEnums.IDLE;
       }
       else if (buf == '1')
       {
-        console.log('\n---------------\nOpening the light ^_^\n---------------\n');
+        console.log('\n---------------\nTurning on the light ^_^\n---------------\n');
+	led8 = gpio.export(14, {
+	  ready: function(){
+	    led8.set();
+	  }
+	});
         curState = stateEnums.IDLE;
       }
       break;
