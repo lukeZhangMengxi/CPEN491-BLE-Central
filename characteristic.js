@@ -1,9 +1,19 @@
 var util = require('util');
 var bleno = require('../..');
 var gpio = require('gpio');
+var fs = require('fs');
+var reboot = require('nodejs-system-reboot');
 
 
 var BlenoCharacteristic = bleno.Characteristic;
+
+
+// Wifi variables
+var interfaceContent;
+var contentBeforeSSID = "source-directory /etc/network/interfaces.d\n\nauto wlan0\niface wlan0 inet dhcp\n\twpa-ssid ";
+var contentBeforePASS = "\n\twpa-psk ";
+var ssid;
+var password;
 
 // GPIO variables
 var led8; // Board Pin 8 (GPIO 14)
@@ -100,6 +110,7 @@ EchoCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResp
     case stateEnums.WIFI_ACCOUNT:
       // function to set account
       console.log('\n---------------\nWifi account set to: ' + buf + '\n---------------\n');
+      ssid = buf;
 
       curState = stateEnums.WIFI_PASSWORD;
       break;
@@ -107,6 +118,23 @@ EchoCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResp
     case stateEnums.WIFI_PASSWORD:
       // function to set password
       console.log('\n---------------\nWifi password set to: ' + buf + '\n---------------\n');
+      password = buf;
+
+      interfaceContent = contentBeforeSSID + ssid + contentBeforePASS + password;
+      fs.writeFile('/etc/network/interfaces', interfaceContent, function(err){
+
+	if (err) throw err;
+
+	console.log('Setting up the new SSID and PASSWORD...')
+      });
+
+      reboot(function(err, stderr, stdout){
+
+	if (!err && !stderr) {
+		console.log(stdout);
+	}
+      });
+
 
       curState = stateEnums.IDLE;
       break;
