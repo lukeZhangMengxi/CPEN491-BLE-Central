@@ -1,1 +1,1 @@
-# CPEN491-BLE-Central
+# CPEN491-BLE-Peripheral
