@@ -22,14 +22,14 @@ var led8; // Board Pin 8 (GPIO 14)
 
 
 var stateEnums = {
-  FIRST : -1,
-  IDLE : 0,
-  WIFI_ACCOUNT  : 1,
+  SERIAL_CHECK : -1,
+  IDLE_WIFI_CHECK : 0,
+  WIFI_SSID  : 1,
   WIFI_PASSWORD : 2,
   LOGIC : 3
 }
 
-curState = stateEnums.FIRST;
+curState = stateEnums.SERIAL_CHECK;
 
 
 var EchoCharacteristic = function() {
@@ -71,7 +71,7 @@ EchoCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResp
   buf = this._value.toString();
 
 
-  if (curState != stateEnums.FIRST)
+  if (curState != stateEnums.SERIAL_CHECK)
   {
     console.log('Msg from the phone :: Current State = ' + curState + '    buf = ' + buf); 
   }
@@ -86,20 +86,35 @@ EchoCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResp
   // logic
   switch (curState) {
 
-    case stateEnums.FIRST:
+    case stateEnums.SERIAL_CHECK:
       // check RPi pin
       // No RPi pin, no access to the following control logic
       console.log('\n--------------- Enter RPi Pin: \n');
       if (buf == '1234567890')
       {
         console.log('\n RPi Pin Correct ---------------\n');
-        curState = stateEnums.IDLE;
+        curState = stateEnums.IDLE_WIFI_CHECK;
       }
 
-    case stateEnums.IDLE:
+    case stateEnums.IDLE_WIFI_CHECK:
+
+	// check wifi connection
+	var wifi_connected = false;
+	require('dns').resolve('www.google.com', function(err){
+		if(err) {
+			console.log("No internet connection!");
+			// TODOO
+			// function to send not connected signal to the phone
+
+		}else{
+			console.log("Internet connected!");
+			wifi_connected = true;
+		}
+	});
+
       if (buf == 'wifi')
       {
-        curState = stateEnums.WIFI_ACCOUNT;
+        curState = stateEnums.WIFI_SSID;
       }
       if (buf == 'logic')
       {
@@ -107,7 +122,7 @@ EchoCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResp
       }
       break;
 
-    case stateEnums.WIFI_ACCOUNT:
+    case stateEnums.WIFI_SSID:
       // function to set account
       console.log('\n---------------\nWifi account set to: ' + buf + '\n---------------\n');
       ssid = buf;
@@ -136,7 +151,7 @@ EchoCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResp
       });
 
 
-      curState = stateEnums.IDLE;
+      curState = stateEnums.IDLE_WIFI_CHECK;
       break;
 
     case stateEnums.LOGIC:
@@ -149,7 +164,7 @@ EchoCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResp
 	    led8.reset();
 	  }
 	});
-        curState = stateEnums.IDLE;
+        curState = stateEnums.IDLE_WIFI_CHECK;
       }
       else if (buf == '1')
       {
@@ -159,12 +174,12 @@ EchoCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResp
 	    led8.set();
 	  }
 	});
-        curState = stateEnums.IDLE;
+        curState = stateEnums.IDLE_WIFI_CHECK;
       }
       break;
 
     default: 
-      curState = stateEnums.IDLE;
+      curState = stateEnums.IDLE_WIFI_CHECK;
   }
 
 
