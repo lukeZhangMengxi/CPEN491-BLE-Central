@@ -77,11 +77,11 @@ EchoCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResp
   }
   
 
-  // if (this._updateValueCallback) {
-  //   console.log('EchoCharacteristic - onWriteRequest: notifying');
-
-  //   this._updateValueCallback(this._value);
-  // }
+	//if (this._updateValueCallback) {
+	//	console.log('EchoCharacteristic - onWriteRequest: notifying');
+	//
+	//	this._updateValueCallback("0");
+	//}
 
   // logic
   switch (curState) {
@@ -96,19 +96,29 @@ EchoCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResp
         curState = stateEnums.IDLE_WIFI_CHECK;
       }
 
+	break;
+
     case stateEnums.IDLE_WIFI_CHECK:
 
+	console.log("IDLE_WIFI_CHECK");
+
 	// check wifi connection
-	var wifi_connected = false;
+	let thisObj = this;
 	require('dns').resolve('www.google.com', function(err){
 		if(err) {
 			console.log("No internet connection!");
-			// TODOO
 			// function to send not connected signal to the phone
+			thisObj._updateValueCallback("1");
+			
 
 		}else{
 			console.log("Internet connected!");
-			wifi_connected = true;
+			if (thisObj._updateValueCallback) {
+				console.log('EchoCharacteristic - onWriteRequest: notifying');
+
+  				thisObj._updateValueCallback("0");
+			}
+			
 		}
 	});
 
@@ -156,7 +166,7 @@ EchoCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResp
 
     case stateEnums.LOGIC:
       // functions to control the light
-      if (buf == '0')
+      if (buf == 'off')
       {
         console.log('\n---------------\nTurning off the light ^_^\n---------------\n');
 	led8 = gpio.export(14, {
@@ -166,7 +176,7 @@ EchoCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResp
 	});
         curState = stateEnums.IDLE_WIFI_CHECK;
       }
-      else if (buf == '1')
+      else if (buf == 'on')
       {
         console.log('\n---------------\nTurning on the light ^_^\n---------------\n');
 	led8 = gpio.export(14, {
@@ -179,7 +189,7 @@ EchoCharacteristic.prototype.onWriteRequest = function(data, offset, withoutResp
       break;
 
     default: 
-      curState = stateEnums.IDLE_WIFI_CHECK;
+      curState = stateEnums.SERIAL_CHECK;
   }
 
 
